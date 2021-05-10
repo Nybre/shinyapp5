@@ -2,11 +2,12 @@ library(geojsonio)
 library(leaflet)
 library(shiny)
 library(shinyWidgets)
-library(sp) 
+library(sp)
+devtools::install_github("ropensci/geojsonio")
 
 states <-
     geojsonio::geojson_read("json/gz_2010_us_040_00_20m.json", what = "sp")
- 
+
 #ideally this must not sit on the global variable
 table <- read.csv("StateMortalityData.csv", header = TRUE)
 df <- na.omit(as.data.frame(table))
@@ -22,6 +23,8 @@ df <-
 
 sex <- df$Gender
 race <- df$Race_Ethnicity
+
+
 
 # Define UI for application
 ui <- fluidPage(titlePanel("Project Step 4"),
@@ -64,13 +67,11 @@ server <- function(input, output) {
     race_filter_output <- reactive({ 
         input$raceInput 
     })
-     #source data
+    US_State_data <-reactive({
+        #source data
         #file must be in the working directory, otherwise you can allow user to upload
         table <- read.csv("StateMortalityData.csv", header = TRUE)
-    
- #output plot
-    output$map <- renderLeaflet({
-       
+        
         #table reprocessing
         df <- na.omit(as.data.frame(table))
         df <-
@@ -97,20 +98,29 @@ server <- function(input, output) {
         names(data_values) <- state_names
         US_States <- states[states$NAME %in% unique(df$LocationDesc),]
         US_States$DataValue <- data_values[US_States$NAME]
-        
+        return(US_States)
+    })
+    
+    labels_data<-reactive({
         labels <- sprintf(
             "<strong>%s</strong><br/>%g deaths per 100,000 population</sup>",
-            US_States$NAME,
-            US_States$DataValue
+            US_State_data()$NAME,
+            US_State_data()$DataValue
         ) %>% lapply(htmltools::HTML)
-        
+        return(labels)
+    }) 
+    
+    pal_data <-reactive({
         bins <- c(50, 100, 200, 300, 400, 500, 1000)
         pal <-
-            colorBin("YlOrRd", domain = US_States$DataValue, bins = bins)
-        
-        leaflet(US_States) %>%
+            colorBin("YlOrRd", domain = US_State_data()$DataValue, bins = bins)
+        return(pal)
+    })
+     
+    output$map <- renderLeaflet({
+        leaflet(US_State_data()) %>%
             setView(-96, 37.8, 4) %>% addPolygons(
-                fillColor = ~ pal(DataValue),
+                fillColor = ~ pal_data()(DataValue),
                 weight = 2,
                 opacity = 1,
                 color = "white",
@@ -123,7 +133,7 @@ server <- function(input, output) {
                     fillOpacity = 0.7,
                     bringToFront = TRUE
                 ),
-                label = labels,
+                label = labels_data(),
                 labelOptions = labelOptions(
                     style = list("font-weight" = "normal", padding = "3px 8px"),
                     textsize = "15px",
@@ -131,7 +141,7 @@ server <- function(input, output) {
                 )
             ) %>%
             addLegend(
-                pal = pal,
+                pal = pal_data(),
                 values = ~ DataValue,
                 opacity = 0.7,
                 title = NULL,
