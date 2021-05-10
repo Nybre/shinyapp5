@@ -2,7 +2,8 @@ library(geojsonio)
 library(leaflet)
 library(shiny)
 library(shinyWidgets)
-library(sp) 
+library(sp)
+devtools::install_github("ropensci/geojsonio")
 
 states <-
     geojsonio::geojson_read("json/gz_2010_us_040_00_20m.json", what = "sp")
@@ -19,10 +20,12 @@ df <-
             df$LocationDesc == "Northern Mariana Islands" |
             df$LocationDesc == "Virgin Islands of the U.S."
     ),]
-
+#subset by both male and female and both black and white to check the state of cali
+ 
+#state_names <- df$LocationDesc
 sex <- df$Gender
 race <- df$Race_Ethnicity
-
+ 
 
 # Define UI for application
 ui <- fluidPage(titlePanel("Project Step 4"),
@@ -53,7 +56,7 @@ ui <- fluidPage(titlePanel("Project Step 4"),
                     
                     position = c("right")
                 ))
- 
+getwd()
 # Define server logic
 server <- function(input, output) {
     
@@ -81,21 +84,24 @@ server <- function(input, output) {
                     df$LocationDesc == "Northern Mariana Islands" |
                     df$LocationDesc == "Virgin Islands of the U.S."
             ),]
-        #apply filters to df
-        #filter df to either male, female
-        #you will need to control the error message if neither gender/race is selected
-        #subset main database based on checkbox clicks
-        df=subset(df,df$Gender == gender_filter_output() |
-                      df$Race_Ethnicity == race_filter_output())
-        #preview filter output on R output terminal
-        print(gender_filter_output())
-        print(race_filter_output())
         
-        data_values <- df$Data_Value
-        state_names <- df$LocationDesc
-        names(data_values) <- state_names
-        US_States <- states[states$NAME %in% unique(df$LocationDesc),]
+        df=subset(df, df$Gender %in% c(gender_filter_output()))
+       
+        df=subset(df,df$Race_Ethnicity %in% c(race_filter_output()) ) 
+       
+        
+        data_values = data.frame(df$LocationDesc,df$Data_Value)
+        colnames(data_values) <- c("LocationDesc","Data_Value")  
+        data_values<-reshape2::melt(data_values,id=c("LocationDesc"))
+        data_values_df<-reshape2::dcast(data_values,LocationDesc~variable,sum)    
+        
+        data_values <- data_values_df$Data_Value
+        names(data_values) <- data_values_df$LocationDesc
+      
+        
+        US_States <- states[states$NAME %in% unique(data_values_df$LocationDesc),]
         US_States$DataValue <- data_values[US_States$NAME]
+        
         return(US_States)
     })
     
@@ -104,7 +110,9 @@ server <- function(input, output) {
             "<strong>%s</strong><br/>%g deaths per 100,000 population</sup>",
             US_State_data()$NAME,
             US_State_data()$DataValue
-        ) %>% lapply(htmltools::HTML)
+        ) %>% lapply(htmltools::HTML) 
+        print( US_State_data()$NAME)
+        print(US_State_data()$DataValue)
         return(labels)
     }) 
     
@@ -112,10 +120,12 @@ server <- function(input, output) {
         bins <- c(50, 100, 200, 300, 400, 500, 1000)
         pal <-
             colorBin("YlOrRd", domain = US_State_data()$DataValue, bins = bins)
+        print(US_State_data()$DataValue)
         return(pal)
     })
-     
+    # paste("Female", "Male", sep = ",")
     output$map <- renderLeaflet({
+       # print(US_State_data())
         leaflet(US_State_data()) %>%
             setView(-96, 37.8, 4) %>% addPolygons(
                 fillColor = ~ pal_data()(DataValue),
