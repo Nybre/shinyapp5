@@ -3,6 +3,7 @@ library(leaflet)
 library(shiny)
 library(shinyWidgets)
 library(sp) 
+require(reshape2) 
 
 states <-
     geojsonio::geojson_read("json/gz_2010_us_040_00_20m.json", what = "sp")
@@ -55,7 +56,7 @@ ui <- fluidPage(titlePanel("Project Step 4"),
                     
                     position = c("right")
                 ))
-getwd()
+ 
 # Define server logic
 server <- function(input, output) {
     
