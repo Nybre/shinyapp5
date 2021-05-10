@@ -2,8 +2,7 @@ library(geojsonio)
 library(leaflet)
 library(shiny)
 library(shinyWidgets)
-library(sp)
-devtools::install_github("ropensci/geojsonio")
+library(sp) 
 
 states <-
     geojsonio::geojson_read("json/gz_2010_us_040_00_20m.json", what = "sp")
@@ -110,22 +109,17 @@ server <- function(input, output) {
             "<strong>%s</strong><br/>%g deaths per 100,000 population</sup>",
             US_State_data()$NAME,
             US_State_data()$DataValue
-        ) %>% lapply(htmltools::HTML) 
-        print( US_State_data()$NAME)
-        print(US_State_data()$DataValue)
+        ) %>% lapply(htmltools::HTML)  
         return(labels)
     }) 
     
     pal_data <-reactive({
         bins <- c(50, 100, 200, 300, 400, 500, 1000)
         pal <-
-            colorBin("YlOrRd", domain = US_State_data()$DataValue, bins = bins)
-        print(US_State_data()$DataValue)
+            colorBin("YlOrRd", domain = US_State_data()$DataValue, bins = bins) 
         return(pal)
-    })
-    # paste("Female", "Male", sep = ",")
-    output$map <- renderLeaflet({
-       # print(US_State_data())
+    }) 
+    output$map <- renderLeaflet({ 
         leaflet(US_State_data()) %>%
             setView(-96, 37.8, 4) %>% addPolygons(
                 fillColor = ~ pal_data()(DataValue),
