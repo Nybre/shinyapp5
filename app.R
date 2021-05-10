@@ -2,8 +2,7 @@ library(geojsonio)
 library(leaflet)
 library(shiny)
 library(shinyWidgets)
-library(sp)
-devtools::install_github("ropensci/geojsonio")
+library(sp) 
 
 states <-
     geojsonio::geojson_read("json/gz_2010_us_040_00_20m.json", what = "sp")
