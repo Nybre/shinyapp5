@@ -64,12 +64,13 @@ server <- function(input, output) {
     race_filter_output <- reactive({ 
         input$raceInput 
     })
- #output plot
-    output$map <- renderLeaflet({
-        #source data
+     #source data
         #file must be in the working directory, otherwise you can allow user to upload
         table <- read.csv("StateMortalityData.csv", header = TRUE)
-        
+    
+ #output plot
+    output$map <- renderLeaflet({
+       
         #table reprocessing
         df <- na.omit(as.data.frame(table))
         df <-
