@@ -24,8 +24,6 @@ df <-
 sex <- df$Gender
 race <- df$Race_Ethnicity
 
-
- 
 # Define UI for application
 ui <- fluidPage(titlePanel("Project Step 4"),
                 
@@ -67,8 +65,7 @@ server <- function(input, output) {
     race_filter_output <- reactive({ 
         input$raceInput 
     })
- 
-
+ #output plot
     output$map <- renderLeaflet({
         #source data
         #file must be in the working directory, otherwise you can allow user to upload
